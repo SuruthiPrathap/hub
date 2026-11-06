@@ -61,6 +61,10 @@ app.use((req, res, next) => {
 });
 
 app.use(express.json());
+// Public ping route for UptimeRobot
+app.get('/ping', (req, res) => {
+  res.status(200).send('OK');
+});
 
 // ─── API Routes ──────────────────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);

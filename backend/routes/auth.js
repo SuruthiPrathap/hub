@@ -45,9 +45,16 @@ router.post('/login', async (req, res) => {
   const ip = getIp(req);
 
   try {
-    const user = await User.findOne({ username });
+   const mongoose = require('mongoose');
+const user = await User.findOne({ username });
 
-    if (!user || !(await user.comparePassword(password))) {
+console.log('DB name:', mongoose.connection.name);
+console.log('Users in DB:', await User.countDocuments());
+console.log('Username typed:', JSON.stringify(username));
+console.log('User found:', !!user);
+if (user) console.log('Password matches:', await user.comparePassword(password));
+
+if (!user || !(await user.comparePassword(password))) {
       await createLog({
         performedBy: { username: username || 'unknown' },
         action:  'LOGIN_FAILED',
