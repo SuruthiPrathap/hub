@@ -19,6 +19,7 @@ const adminRoutes = require('./routes/admin');
 const { router: healthRoutes, startHealthWorker } = require('./routes/health');
 const prefRoutes = require('./routes/preferences');
 const analyticsRoutes = require('./routes/analytics');
+// const twofaRoutes = require('./routes/twofa');
 
 app.set('trust proxy', 1);
 
@@ -29,20 +30,29 @@ const ALLOWED_ORIGIN = [
   'http://localhost:5173',
   'http://192.168.29.159:5173',
   'http://192.168.29.84:5173',
+  'https://private-hubweb.netlify.app',
   process.env.FRONTEND_URL,
 ].filter(Boolean);
 
-app.use(cors({
+const corsOptions = {
   origin: (origin, callback) => {
     // No Origin header = same-origin request (safe to allow)
     if (!origin) return callback(null, true);
-    if (ALLOWED_ORIGIN.includes(origin)) return callback(null, true);
-    callback(new Error(`CORS: origin "${origin}" is not allowed`));
+
+    if (ALLOWED_ORIGIN.includes(origin)) {
+      return callback(null, true);
+    }
+
+    console.warn(`CORS blocked origin: ${origin}`);
+    return callback(null, false);
   },
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
-}));
+};
+
+app.use(cors(corsOptions));
+app.options('/{*path}', cors(corsOptions)); // handle preflight requests
 // ─────────────────────────────────────────────────────────────────────────────
 
 app.use((req, res, next) => {
@@ -55,12 +65,13 @@ app.use(express.json());
 // ─── API Routes ──────────────────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api', adminRoutes);
+app.use('/api', adminRoutes); // GET /api/urls, etc.
 app.use('/api/health', healthRoutes);
 app.use('/api/preferences', prefRoutes);
 app.use('/api/analytics', analyticsRoutes);
+// app.use('/api/2fa', twofaRoutes);
 
-// ─── Frontend ────────────────────────────────────────────────────────────────
+// ─── Frontend (only if the build exists) ─────────────────────────────────────
 if (fs.existsSync(indexHtml)) {
   app.use(express.static(frontendDist));
   app.get('/{*path}', (req, res, next) => {
@@ -70,9 +81,8 @@ if (fs.existsSync(indexHtml)) {
     });
   });
 } else {
-  console.warn('frontend/dist not found. Run the frontend build.');
   app.get('/', (req, res) => {
-    res.send('Backend is running, but the frontend build (frontend/dist) is missing.');
+    res.send('Backend is running.');
   });
 }
 
