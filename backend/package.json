@@ -8,7 +8,9 @@
   "dev": "dotenv -e .env nodemon server.js",
   "start": "node server.js",
   "start:local": "npm --prefix ../frontend run build -- --mode development && node server.js",
-  "start:prod": "npm --prefix ../frontend run build && dotenv -e .env.production node server.js"
+  "start:prod": "npm --prefix ../frontend run build && dotenv -e .env.production node server.js",
+ 
+  "build": "npm install --include=dev --prefix ../frontend && npm run build --prefix ../frontend"
 },
   "keywords": [],
   "author": "",
